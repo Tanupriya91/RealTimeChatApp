@@ -40,6 +40,8 @@ app.get("/health",(req,res)=>{
         message: "server running",
     });
 });
+const roomRoutes = require("./routes/rooms");
+app.use("/rooms", roomRoutes);
 
 io.on("connection",(socket)=> {
     console.log("Connected:",Socket.id);
