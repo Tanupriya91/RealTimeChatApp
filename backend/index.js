@@ -2,9 +2,31 @@ const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
 
+const { db } = require("./config/firebase");
 const app = express();
-
 app.use(express.json());
+
+app.get("/firebase-test",async(req,res)=>{
+    try{
+        await db.collection("test").add({
+            message: "Firebase Connected",
+            createdAt: new Date(),
+        });
+        res.json({
+            success: true,
+        });
+    }
+    catch(error){
+        console.log(error);
+        res.status(500).json({
+            success: false,
+        });
+    }
+});
+
+
+
+
 const httpServer = http.createServer(app);
 
 const io = new Server(httpServer,{
@@ -19,11 +41,11 @@ app.get("/health",(req,res)=>{
     });
 });
 
-io.on("connection",(Socket)=> {
+io.on("connection",(socket)=> {
     console.log("Connected:",Socket.id);
 
-    Socket.on("disconnect", ()=>{
-        console.log("Disconnected:", Socket.id);
+    socket.on("disconnect", ()=>{
+        console.log("Disconnected:", socket.id);
     })
 });
 httpServer.listen(3000,() => {
