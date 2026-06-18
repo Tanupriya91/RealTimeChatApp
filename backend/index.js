@@ -43,13 +43,36 @@ app.get("/health",(req,res)=>{
 const roomRoutes = require("./routes/rooms");
 app.use("/rooms", roomRoutes);
 
-io.on("connection",(socket)=> {
-    console.log("Connected:",Socket.id);
+const { getAuth } = require ("firebase-admin/auth");
+io.use(async(socket,next)=>{
+    try{
+        const token = socket.handshake.auth.token;
 
-    socket.on("disconnect", ()=>{
-        console.log("Disconnected:", socket.id);
-    })
+        if(!token){
+            return next(new Error("Token required"));
+        }
+        const decoded = await getAuth().verifyIdToken(token);
+        socket.data.user = decoded;
+        next();
+    }
+    catch(error){
+        console.log(error.message);
+        next(new Error("Unauthorized"));
+    }
 });
-httpServer.listen(3000,() => {
+io.on("connection", (socket) => {
+    console.log("Connected:", socket.id);
+    
+    console.log(
+        "User.UID:",
+        socket.data.user.uid
+    );
+
+    socket.on("disconnect", () => {
+        console.log("Disconnected:", socket.id);
+    });
+});
+
+httpServer.listen(3000, () =>{
     console.log("Server Running");
-})
+});
